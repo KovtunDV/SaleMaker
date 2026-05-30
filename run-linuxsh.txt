@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Запуск SaleMaker на Linux.
+# Не трогает LD_LIBRARY_PATH (иначе ломается Qt из PySide6).
+#
+# При GLIBCXX_3.4.29 + Anaconda:
+#   SALEMAKER_USE_SYSTEM_LIBSTDCXX=1 ./run-linux.sh
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
+
+PY="${ROOT}/.venv/bin/python"
+if [[ ! -x "$PY" ]]; then
+  echo "Не найден ${PY}. Создайте venv:" >&2
+  echo "  python3 -m venv .venv && .venv/bin/pip install -r requirements.txt" >&2
+  exit 1
+fi
+
+if [[ "${SALEMAKER_USE_SYSTEM_LIBSTDCXX:-}" =~ ^(1|[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn])$ ]]; then
+  for lib in /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /lib/x86_64-linux-gnu/libstdc++.so.6; do
+    if [[ -f "$lib" ]]; then
+      export LD_PRELOAD="${lib}${LD_PRELOAD:+:$LD_PRELOAD}"
+      export SALEMAKER_USE_SYSTEM_LIBSTDCXX=1
+      break
+    fi
+  done
+fi
+
+exec "$PY" main.py "$@"

@@ -1,0 +1,589 @@
+output_path: ""
+ui:
+  font_family: Calibri
+  font_size: 10
+  header_field: Наименование в SAP
+  header_label: В обработке
+price_reference:
+  path: ""
+  sheet: Справочник
+  header_row: 3
+camera:
+  max_width: 0
+  max_height: 0
+  scan_max_index: 5
+  capture_with_preview: true
+checklist_templates:
+  path: ''
+package:
+  name_columns:
+  - pdo_kv2
+  - Город
+  - Тип реализации
+  datetime_format: '%Y-%m-%d_%H_%M'
+template:
+  path: template.xlsx
+  sheet: 0
+  header_row: 1
+  start_row: 3
+reference:
+  path: reference.xlsx
+  serial_column: Серийный номер
+  template_serial_column: Серийный номер
+column_mapping:
+  Номер по п/п на устройстве: Номер по п/п на устройстве
+  Наименование в SAP: Наименование в SAP
+  Тип оборудования: Тип оборудования
+  Инв.номер: Инв.номер
+  Остаточная стоимость: Остаточная стоимость
+  Дата ввода в эксплуатацию:
+    ref: Дата ввода в эксплуатацию
+    excel_column: AB
+  Местонахождение: Местонахождение
+  ОС  (на балансе/внесистемный):
+    ref: ОС (на балансе/Внесистемный учет)
+    excel_column: AD
+  Указать название акта на ФИР, формат АУИ_№_дата:
+    ref: Акт УИ
+    excel_column: AL
+    required: true
+semantic:
+- key: gk
+  label: ТБ
+  template_column: ТБ
+  excel_column: F
+  values:
+  - СЗБ
+  - Возможно еще какой то Тербанк
+- key: city_ctx
+  label: Город
+  template_column: Город
+  values:
+  - Мурманск
+  - Санкт-Петербург
+- key: warehouse
+  label: Склад нахождения
+  template_column: Склад нахождения оборудования, полный адрес
+  values:
+  - Мурманск, пр.Ленина д.37
+  - Склад Б
+- key: resp_launch
+  label: Ответственный за предоставление данных
+  template_column: Ответственный за предоставление данных
+  values:
+  - Борзиков Владимир Константинович
+  - Ковтун Дмитрий Владимирович
+  - Буслаев Вячеслав Юрьевич
+- key: resp_wh
+  label: Ответственный за выдачу на складе по указанному адресу
+  template_column: Ответственный за выдачу на складе по указанному адресу
+  values:
+  - Борзиков Владимир Константинович
+  - Буслаев Вячеслав Юрьевич
+- key: sourse
+  label: Тип реализации
+  template_column: Тип реализации
+  values:
+  - ФЛ
+  - ЮЛ
+equipment_types:
+- ПК
+- Ноутбук
+- Неттоп
+- Моноблок
+- Монитор
+- Принтер/МФУ/сканер
+- Планшетный компьютер Apple iPad
+- Планшетный компьютер Android
+equipment_type_column: Тип оборудования
+photo_cell_mode: filename
+checklists:
+  ПК:
+    aliases:
+    - Ноутбук
+    - ПК
+    - Моноблок
+    - Неттоп
+    checklist_start_column: 57
+    photo_slots:
+    - slot: 1
+      template_column: Фото-1.jpg (имя файла), ≤200 КБ
+      excel_column: AF
+      required: true
+      hint: Лицевая сторона оборудования
+    - slot: 2
+      template_column: Тыльная сторона оборудования
+      excel_column: AG
+      required: true
+      hint: Тыльная сторона оборудования
+    - slot: 3
+      template_column: Фото-3.jpg (имя файла)
+      excel_column: AH
+      required: true
+      hint: Включенное оборудование(с настройками)
+    - slot: 4
+      template_column: Фото-4.jpg (имя файла), ≤200 КБ
+      excel_column: AI
+      required: false
+      hint: Дефект 1 крупным планом(при наличии)
+    - slot: 5
+      template_column: Фото-5.jpg (имя файла)
+      excel_column: AJ
+      required: false
+      hint: Дефект 2 крупным планом(при наличии)
+    - slot: 6
+      template_column: Фото-6.jpg (имя файла)
+      excel_column: AK
+      required: false
+      hint: Дефект 3 крупным планом(при наличии)
+    fields:
+    - id: manufacturer
+      label: Производитель
+      type: text
+      default: null
+    - id: model
+      label: Модель
+      type: text
+      values:
+      - Да
+      - Нет
+      - Не знаю
+      default: null
+    - id: bios
+      label: Сброшен пароль БИОС
+      type: text
+      values:
+      - Да
+      - Нет
+      - Не знаю
+      default: null
+      required: true
+    - id: erase
+      label: Проведено трехкратное форматирование
+      type: text
+      values:
+      - Да
+      - Нет
+      - Стерто резинкой
+      default: null
+      required: true
+    - id: defects
+      label: Царапины экрана/корпуса
+      type: text
+      values:
+      - Отсутствуют
+      - Потертости корпуса
+      - Небольшие царапины, Потертости корпуса
+      default: null
+      required: true
+    - id: memory_gb
+      label: Оперативная память, ГБ
+      type: text
+      values:
+      - 4
+      - 8
+      - 16
+      default: '8'
+      required: true
+    - id: processor
+      label: Процессор
+      type: text
+      values:
+      - i3
+      - AMD
+      - i5
+      default: AMD
+      required: true
+    - id: frequency
+      label: Процессор частота, Ггц
+      type: text
+      values:
+      - 1600
+      - 1800
+      - 2400
+      default: null
+      required: true
+    - id: hdd
+      label: Тип жесткого диска
+      type: text
+      values:
+      - HDD
+      - SSD
+      - SSD m.2
+      - Отсутствует
+      default: null
+      required: true
+    - id: hdd_volime
+      label: Емкость диска
+      type: text
+      values:
+      - 240 GB
+      - 512 GB
+      - SSD m.2
+      - Нет
+      default: null
+      required: true
+    - id: power_cord
+      label: Наличие сетевого шнура
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: video_input
+      label: Видеовыходы
+      type: text
+      values:
+      - VGA
+      - VGA/DVI
+      - DVI/HDMI
+      - DVI/HDMI/DisplayPort
+      - HDMI/DisplayPort
+      - VGA/DVI/HDMI/DisplayPort
+      default: null
+      required: true
+    - id: defects2
+      label: Дефекты (описание)
+      type: text
+      values:
+      - Потертости, следы эксплуатации на корпусе
+      - Потертости, следы эксплуатации на корпусе, вмятины
+      - Состояние нового
+      default: Потертости, следы эксплуатации на корпусе, вмятины
+      required: true
+  Монитор:
+    checklist_start_column: 71
+    photo_slots:
+    - slot: 1
+      template_column: Фото-1.jpg (имя файла), ≤200 КБ
+      excel_column: AF
+      required: true
+      hint: Лицевая сторона оборудования
+    - slot: 2
+      template_column: Тыльная сторона оборудования
+      excel_column: AG
+      required: true
+      hint: Тыльная сторона оборудования
+    - slot: 3
+      template_column: Фото-3.jpg (имя файла)
+      excel_column: AH
+      required: true
+      hint: Включенное оборудование(с настройками)
+    - slot: 4
+      template_column: Фото-4.jpg (имя файла), ≤200 КБ
+      excel_column: AI
+      required: false
+      hint: Дефект 1 крупным планом(при наличии)
+    - slot: 5
+      template_column: Фото-5.jpg (имя файла)
+      excel_column: AJ
+      required: false
+      hint: Дефект 2 крупным планом(при наличии)
+    - slot: 6
+      template_column: Фото-6.jpg (имя файла)
+      excel_column: AK
+      required: false
+      hint: Дефект 3 крупным планом(при наличии)
+    fields:
+    - id: manufacturer
+      label: Производитель
+      type: text
+    - id: model
+      label: Модель
+      type: text
+    - id: diagonal
+      label: Диагональ Дюймы
+      type: text
+      values:
+      - 19`
+      - 20`
+      - 24`
+      default: 20`
+    - id: defects
+      label: Затемнения и полосы на матрице
+      type: text
+      values:
+      - Нет
+      - Да
+      default: Нет
+    - id: video_input
+      label: Видеовыходы
+      type: text
+      values:
+      - VGA
+      - VGA/DVI
+      - VGA/HDMI
+      - VGA/HDMI/DisplayPort
+      - HDMI/DisplayPort
+      - VGA/DVI/HDMI/DisplayPort
+      default: VGA/DVI/HDMI/DisplayPort
+    - id: power_blok
+      label: Тип питания Шнур/Блок питания
+      type: text
+      values:
+      - Шнур
+      - Блок питания
+      default: Шнур
+    - id: power_cord
+      label: Сетевой шнур или блок питания в наличии
+      type: text
+      values:
+      - Да
+      - Нет
+      default: Нет
+    - id: defects
+      label: Дефекты (описание)
+      type: text
+      values:
+      - Потертости, следы эксплуатации на корпусе
+      - Потертости, следы эксплуатации на корпусе, небольшие царапины на экране
+      - Состояние нового
+      default: Потертости, следы эксплуатации на корпусе, небольшие царапины на экране
+  Планшетный компьютер Apple iPad:
+    aliases:
+    - Планшетный компьютер Android
+    checklist_start_column: 39
+    photo_slots:
+    - slot: 1
+      template_column: Фото-1.jpg (имя файла), ≤200 КБ
+      excel_column: AF
+      required: true
+      hint: Лицевая сторона оборудования
+    - slot: 2
+      template_column: Тыльная сторона оборудования
+      excel_column: AG
+      required: true
+      hint: Тыльная сторона оборудования
+    - slot: 3
+      template_column: Фото-3.jpg (имя файла)
+      excel_column: AH
+      required: true
+      hint: Включенное оборудование(с настройками)
+    - slot: 4
+      template_column: Фото-4.jpg (имя файла), ≤200 КБ
+      excel_column: AI
+      required: false
+      hint: Дефект 1 крупным планом(при наличии)
+    - slot: 5
+      template_column: Фото-5.jpg (имя файла)
+      excel_column: AJ
+      required: false
+      hint: Дефект 2 крупным планом(при наличии)
+    - slot: 6
+      template_column: Фото-6.jpg (имя файла)
+      excel_column: AK
+      required: false
+      hint: Дефект 3 крупным планом(при наличии)
+    fields:
+    - id: manufacturer
+      label: Производитель
+      type: text
+      required: true
+    - id: model
+      label: Модель
+      type: text
+      required: true
+    - id: memory_gb
+      label: Память
+      type: text
+      values:
+      - 16GB
+      - 32GB
+      - 64GB
+      - 128GB
+      default: ' '
+      required: true
+    - id: sim
+      label: Слот для SIM
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: color
+      label: Цвет
+      type: text
+      values:
+      - Серебристый
+      - Белый
+      - Серый
+      - Черный
+      default: Серебристый
+      required: true
+    - id: check1
+      label: Планшет включается?
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check2
+      label: Планшет сброшен до заводских настроек?
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check3
+      label: В настройках отсутствует надпись «Управляется Sberbank»?
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check4
+      label: Отсутствует статус планшета «ID заблокирован». Планшет отвязан от Apple
+        ID.
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check5
+      label: Зарядное устройство
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check6
+      label: Трещины и сколы на экране
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check7
+      label: Полосы, затемнения на экране
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check8
+      label: Глубокие царапины и вмятины на корпусе
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check9
+      label: Кнопки на устройстве исправны
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check10
+      label: Основная камера исправна
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: check11
+      label: Фронтальная камера исправна
+      type: text
+      values:
+      - Да
+      - Нет
+      default: null
+      required: true
+    - id: defects
+      label: Дефекты (описание)
+      type: text
+      values:
+      - Потертости, следы эксплуатации на корпусе
+      - Потертости, следы эксплуатации на корпусе, вмятины
+      - Потертости, следы эксплуатации на корпусе, царапины на экране
+      - Состояние нового
+      - Потертости, следы эксплуатации на корпусе, царапины на экране, вмятины
+      default: null
+      required: true
+  Принтер/МФУ/сканер:
+    checklist_start_column: CA
+    fields:
+    - id: equipment_type_column
+      label: Тип оборудования
+      type: text
+      values:
+      - '{equipment_type}'
+      default: '{equipment_type}'
+      required: true
+    - id: manufacturer
+      label: Производитель
+      type: text
+      required: true
+    - id: model
+      label: Модель
+      type: text
+      required: true
+    - id: print_def
+      label: Дефекты печати
+      type: text
+      values:
+      - Нет
+      - Да
+      default: null
+      required: true
+    - id: print_gab
+      label: Габариты не более длина, ширина, высота (см)
+      type: text
+      values:
+      - 30*30*40
+      - 35*40*50
+      default: null
+      required: true
+    - id: defects
+      label: Дефекты (описание)
+      type: text
+      values:
+      - Потертости, следы эксплуатации на корпусе
+      - Потертости, следы эксплуатации на корпусе, небольшая полоса при печати
+      - Состояние нового
+      default: null
+      required: true
+    photo_slots:
+    - slot: 1
+      template_column: Фото-1.jpg (имя файла), ≤200 КБ
+      excel_column: AF
+      required: true
+      hint: Лицевая сторона оборудования
+    - slot: 2
+      template_column: Тыльная сторона оборудования
+      excel_column: AG
+      required: true
+      hint: Тыльная сторона оборудования
+    - slot: 3
+      template_column: Фото-3.jpg (имя файла)
+      excel_column: AH
+      required: true
+      hint: Включенное оборудование(с настройками)
+    - slot: 4
+      template_column: Фото-4.jpg (имя файла), ≤200 КБ
+      excel_column: AI
+      required: false
+      hint: Дефект 1 крупным планом(при наличии)
+    - slot: 5
+      template_column: Фото-5.jpg (имя файла)
+      excel_column: AJ
+      required: false
+      hint: Дефект 2 крупным планом(при наличии)
+    - slot: 6
+      template_column: Фото-6.jpg (имя файла)
+      excel_column: AK
+      required: false
+      hint: Дефект 3 крупным планом(при наличии)
+photos_dir: Photos

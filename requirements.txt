@@ -1,0 +1,9 @@
+# SaleMaker — Python 3.9–3.13 (Windows, Linux)
+# UI: PySide6 (в составе — shiboken6; это одна связка, без неё PySide6 не работает).
+# Версии зафиксированы для воспроизводимой сборки на разных ПК (Windows + Python 3.12).
+pandas==2.2.3
+openpyxl==3.1.5
+opencv-python==4.10.0.84
+Pillow==11.1.0
+PyYAML==6.0.2
+PySide6==6.8.3
