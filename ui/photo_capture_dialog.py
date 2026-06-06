@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from camera import Webcam
+from photo_crop import CropParams, detect_crop_rect, draw_crop_overlay
 from ui import layout_constants as lc
 from ui.widgets import CameraPreviewLabel, bgr_ndarray_to_qpixmap
 
@@ -31,10 +32,20 @@ class PhotoCaptureWindow(QWidget):
 
     _WARMUP_FRAMES = 5
 
-    def __init__(self, webcam: Webcam, *, slot: int) -> None:
+    def __init__(
+        self,
+        webcam: Webcam,
+        *,
+        slot: int,
+        crop_enabled: bool = False,
+        crop_params: CropParams | None = None,
+    ) -> None:
         super().__init__(None)
         self._webcam = webcam
         self._slot = slot
+        self._crop_enabled = crop_enabled
+        self._crop_params = crop_params
+        self._last_crop_found = False
         self._last_bgr: np.ndarray | None = None
         self._finished = False
         self._frame_busy = False
@@ -71,6 +82,12 @@ class PhotoCaptureWindow(QWidget):
         self._hint.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._hint.setStyleSheet("color: #cccccc;")
         footer_l.addWidget(self._hint)
+
+        self._crop_hint = QLabel("")
+        self._crop_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._crop_hint.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._crop_hint.hide()
+        footer_l.addWidget(self._crop_hint)
 
         self._status = QLabel("")
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -218,9 +235,28 @@ class PhotoCaptureWindow(QWidget):
             self._show_status("Не удалось получить кадр с камеры.")
             return
         self._last_bgr = bgr.copy()
+        display_bgr = bgr
+        if self._crop_enabled and self._crop_params is not None:
+            detected = detect_crop_rect(bgr, self._crop_params)
+            self._last_crop_found = detected.found
+            if detected.found and detected.crop_rect is not None:
+                display_bgr = draw_crop_overlay(bgr, detected.crop_rect)
+                self._crop_hint.setText(
+                    "Авто-кадрирование: объект найден — зелёная рамка = область сохранения"
+                )
+                self._crop_hint.setStyleSheet("color: #81c784;")
+            else:
+                self._crop_hint.setText(
+                    "Авто-кадрирование: объект не найден — будет сохранён полный кадр"
+                )
+                self._crop_hint.setStyleSheet("color: #ffb74d;")
+            self._crop_hint.show()
+        else:
+            self._last_crop_found = False
+            self._crop_hint.hide()
         self._status.hide()
         self._sync_preview_layout()
-        pix = bgr_ndarray_to_qpixmap(bgr)
+        pix = bgr_ndarray_to_qpixmap(display_bgr)
         if pix is None or pix.isNull():
             self._show_status("Ошибка отображения кадра.")
             return
@@ -233,6 +269,8 @@ def run_photo_capture(
     slot: int,
     *,
     parent: QWidget | None = None,
+    crop_enabled: bool = False,
+    crop_params: CropParams | None = None,
 ) -> np.ndarray | None:
     """Блокирующая съёмка в отдельном окне. Возвращает BGR-кадр или None при отмене."""
     result: list[np.ndarray | None] = [None]
@@ -242,7 +280,12 @@ def run_photo_capture(
     if parent is not None:
         parent.setEnabled(False)
 
-    window = PhotoCaptureWindow(webcam, slot=slot)
+    window = PhotoCaptureWindow(
+        webcam,
+        slot=slot,
+        crop_enabled=crop_enabled,
+        crop_params=crop_params,
+    )
 
     def on_completed(bgr: object) -> None:
         result[0] = bgr if bgr is None or isinstance(bgr, np.ndarray) else None

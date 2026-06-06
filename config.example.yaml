@@ -13,6 +13,11 @@ camera:
   max_height: 0
   scan_max_index: 5
   capture_with_preview: true
+  crop_central_subject: false
+  crop_padding_ratio: 0.05
+  crop_center_region: 0.75
+  crop_min_area_ratio: 0.01
+  crop_max_area_ratio: 0.95
 checklist_templates:
   path: ''
 package:

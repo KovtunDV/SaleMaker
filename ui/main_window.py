@@ -39,6 +39,12 @@ from PySide6.QtWidgets import (
 )
 
 from camera import Webcam, save_bgr
+from photo_crop import (
+    crop_central_subject,
+    crop_params_from_camera,
+    detect_crop_rect,
+    draw_crop_overlay,
+)
 from checklist_templates import (
     TEMPLATE_SKIP_FIELD_IDS,
     find_checklist_template,
@@ -164,6 +170,9 @@ class MainWindow(QMainWindow):
         self._camera_max_w_spin: QSpinBox | None = None
         self._camera_max_h_spin: QSpinBox | None = None
         self._capture_preview_cb: QCheckBox | None = None
+        self._crop_central_subject_cb: QCheckBox | None = None
+        self._cam_crop_status: QLabel | None = None
+        self._last_crop_detected: bool = False
         self._ui_font_family_cb: QComboBox | None = None
         self._ui_font_size_spin: QSpinBox | None = None
 
@@ -259,6 +268,8 @@ class MainWindow(QMainWindow):
             self._camera_max_h_spin.setValue(int(cfg.camera.max_height))
         if self._capture_preview_cb is not None:
             self._capture_preview_cb.setChecked(bool(cfg.camera.capture_with_preview))
+        if self._crop_central_subject_cb is not None:
+            self._crop_central_subject_cb.setChecked(bool(cfg.camera.crop_central_subject))
         if self._ui_font_family_cb is not None:
             self._ui_font_family_cb.setCurrentText(cfg.ui.font_family)
         if self._ui_font_size_spin is not None:
@@ -1650,6 +1661,13 @@ class MainWindow(QMainWindow):
         grid_add(grid, self._capture_preview_cb, row, 0, 1, 4)
         row += 1
 
+        self._crop_central_subject_cb = QCheckBox(
+            "Авто-кадрирование: сохранять только центральный объект (обрезка по контуру)"
+        )
+        self._crop_central_subject_cb.toggled.connect(self._on_crop_central_subject_toggled)
+        grid_add(grid, self._crop_central_subject_cb, row, 0, 1, 4)
+        row += 1
+
         grid_add(grid, self._h_separator(), row, 0, 1, 4)
         row += 1
 
@@ -1848,6 +1866,11 @@ class MainWindow(QMainWindow):
         self._cam_label.set_minimum_preview_size(lc.PREVIEW_MIN_W, lc.PREVIEW_MIN_H)
         self._cam_label.set_max_preview_size(lc.PREVIEW_MAX_W, lc.PREVIEW_MAX_H)
         cam_l.addWidget(self._cam_label, stretch=0)
+        self._cam_crop_status = QLabel("")
+        self._cam_crop_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._cam_crop_status.setWordWrap(True)
+        self._cam_crop_status.hide()
+        cam_l.addWidget(self._cam_crop_status, stretch=0)
         bf = QHBoxLayout()
         bf.addWidget(QLabel("Камера:"))
         self._camera_cb = QComboBox()
@@ -1889,14 +1912,23 @@ class MainWindow(QMainWindow):
                     if self._capture_preview_cb is not None
                     else None
                 )
+                crop = (
+                    self._crop_central_subject_cb.isChecked()
+                    if self._crop_central_subject_cb is not None
+                    else None
+                )
                 update_camera_settings(
                     self._config_path_edit.text(),
                     int(self._camera_max_w_spin.value()),
                     int(self._camera_max_h_spin.value()),
                     capture_with_preview=preview,
+                    crop_central_subject=crop,
                 )
-                if self._cfg is not None and preview is not None:
-                    self._cfg.camera.capture_with_preview = preview
+                if self._cfg is not None:
+                    if preview is not None:
+                        self._cfg.camera.capture_with_preview = preview
+                    if crop is not None:
+                        self._cfg.camera.crop_central_subject = crop
             self._set_status("Настройки камеры сохранены в config.yaml.")
         except Exception as e:
             self._set_status(f"Не удалось сохранить настройки камеры: {e}")
@@ -1914,6 +1946,63 @@ class MainWindow(QMainWindow):
                 )
         except Exception:
             pass
+
+    def _on_crop_central_subject_toggled(self, checked: bool) -> None:
+        if self._cfg is not None:
+            self._cfg.camera.crop_central_subject = checked
+        self._last_crop_detected = False
+        if not checked and self._cam_crop_status is not None:
+            self._cam_crop_status.hide()
+        try:
+            if self._config_path_edit and self._camera_max_w_spin and self._camera_max_h_spin:
+                update_camera_settings(
+                    self._config_yaml_path(),
+                    int(self._camera_max_w_spin.value()),
+                    int(self._camera_max_h_spin.value()),
+                    crop_central_subject=checked,
+                )
+        except Exception:
+            pass
+
+    def _crop_central_subject_enabled(self) -> bool:
+        if self._crop_central_subject_cb is not None:
+            return self._crop_central_subject_cb.isChecked()
+        cfg = self._cfg
+        return bool(cfg and cfg.camera.crop_central_subject)
+
+    def _camera_crop_params(self):
+        cfg = self._cfg
+        if cfg is None:
+            from photo_crop import CropParams
+
+            return CropParams()
+        return crop_params_from_camera(cfg.camera)
+
+    def _prepare_camera_preview_bgr(self, bgr: np.ndarray) -> tuple[np.ndarray, bool]:
+        if not self._crop_central_subject_enabled():
+            self._last_crop_detected = False
+            if self._cam_crop_status is not None:
+                self._cam_crop_status.hide()
+            return bgr, False
+        params = self._camera_crop_params()
+        detected = detect_crop_rect(bgr, params)
+        found = detected.found
+        self._last_crop_detected = found
+        if self._cam_crop_status is not None:
+            if found:
+                self._cam_crop_status.setText(
+                    "Авто-кадрирование: объект найден — зелёная рамка = область сохранения"
+                )
+                self._cam_crop_status.setStyleSheet("color: #2e7d32;")
+            else:
+                self._cam_crop_status.setText(
+                    "Авто-кадрирование: объект не найден — будет сохранён полный кадр"
+                )
+                self._cam_crop_status.setStyleSheet("color: #f57c00;")
+            self._cam_crop_status.show()
+        if found and detected.crop_rect is not None:
+            return draw_crop_overlay(bgr, detected.crop_rect), True
+        return bgr, False
 
     def _detect_cameras(self) -> list[int]:
         cfg = self._cfg
@@ -2553,7 +2642,8 @@ class MainWindow(QMainWindow):
         bgr = self._webcam.read_bgr()
         if bgr is not None:
             self._last_bgr = bgr.copy()
-            pix = bgr_ndarray_to_qpixmap(bgr)
+            preview_bgr, _found = self._prepare_camera_preview_bgr(bgr)
+            pix = bgr_ndarray_to_qpixmap(preview_bgr)
             if pix is not None and not pix.isNull():
                 self._cam_pixmap = pix
                 if self._cam_label is not None:
@@ -2566,6 +2656,8 @@ class MainWindow(QMainWindow):
         if self._cam_label:
             self._cam_label.clear_frame()
             self._cam_pixmap = None
+        if self._cam_crop_status is not None:
+            self._cam_crop_status.hide()
 
     @staticmethod
     def _bgr_to_qpixmap(bgr: np.ndarray) -> QPixmap:
@@ -2616,7 +2708,13 @@ class MainWindow(QMainWindow):
             if preview_was_active:
                 self._preview_timer.stop()
             try:
-                bgr = run_photo_capture(self._webcam, slot, parent=self)
+                bgr = run_photo_capture(
+                    self._webcam,
+                    slot,
+                    parent=self,
+                    crop_enabled=self._crop_central_subject_enabled(),
+                    crop_params=self._camera_crop_params() if self._crop_central_subject_enabled() else None,
+                )
                 if bgr is None:
                     return
                 self._last_bgr = bgr.copy()
@@ -2637,6 +2735,11 @@ class MainWindow(QMainWindow):
     def _save_slot_photo(self, slot: int, bgr: np.ndarray) -> None:
         serial = self._serial_edit.text().strip() if self._serial_edit else ""
         photos_dir = self._photos_dir_edit.text().strip() if self._photos_dir_edit else ""
+        cfg = self._cfg
+        crop_applied = False
+        if self._crop_central_subject_enabled() and cfg is not None:
+            params = self._camera_crop_params()
+            bgr, crop_applied, _detected = crop_central_subject(bgr, params)
         try:
             full_path, fname = make_photo_path_for_slot(photos_dir, serial, slot, "jpg")
         except ValueError as e:
@@ -2661,7 +2764,13 @@ class MainWindow(QMainWindow):
                 )
         except OSError:
             pass
-        self._set_status(f"Слот {slot}: {fname}")
+        status = f"Слот {slot}: {fname}"
+        if self._crop_central_subject_enabled():
+            if crop_applied:
+                status += " (авто-кадрирование)"
+            else:
+                status += " (объект не найден — полный кадр)"
+        self._set_status(status)
         QTimer.singleShot(0, partial(self._refresh_thumb, slot))
 
     def _refresh_thumb(self, slot: int) -> None:

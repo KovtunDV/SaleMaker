@@ -84,6 +84,11 @@ class CameraSection:
     max_height: int = 0  # 0 = не задавать
     scan_max_index: int = 5
     capture_with_preview: bool = False  # полноэкранное превью перед съёмкой
+    crop_central_subject: bool = False  # авто-кадрирование центрального объекта
+    crop_padding_ratio: float = 0.05
+    crop_center_region: float = 0.75
+    crop_min_area_ratio: float = 0.01
+    crop_max_area_ratio: float = 0.95
 
 
 @dataclass
@@ -140,6 +145,11 @@ class AppConfig:
             max_height=int(cam_raw.get("max_height") or 0),
             scan_max_index=int(cam_raw.get("scan_max_index") or 5),
             capture_with_preview=bool(cam_raw.get("capture_with_preview", False)),
+            crop_central_subject=bool(cam_raw.get("crop_central_subject", False)),
+            crop_padding_ratio=float(cam_raw.get("crop_padding_ratio", 0.05) or 0.05),
+            crop_center_region=float(cam_raw.get("crop_center_region", 0.75) or 0.75),
+            crop_min_area_ratio=float(cam_raw.get("crop_min_area_ratio", 0.01) or 0.01),
+            crop_max_area_ratio=float(cam_raw.get("crop_max_area_ratio", 0.95) or 0.95),
         )
         pkg_raw = d.get("package") or {}
         package = PackageSection(
@@ -534,6 +544,7 @@ def update_camera_settings(
     max_height: int,
     *,
     capture_with_preview: bool | None = None,
+    crop_central_subject: bool | None = None,
 ) -> None:
     """Сохраняет настройки camera.* в config.yaml (перезаписывает файл)."""
     p = Path(path)
@@ -551,6 +562,8 @@ def update_camera_settings(
     cam["max_height"] = int(max_height or 0)
     if capture_with_preview is not None:
         cam["capture_with_preview"] = bool(capture_with_preview)
+    if crop_central_subject is not None:
+        cam["crop_central_subject"] = bool(crop_central_subject)
     with open(p, "w", encoding="utf-8") as f:
         yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
 
