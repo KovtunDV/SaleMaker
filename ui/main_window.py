@@ -82,6 +82,7 @@ from excel_io import (
     update_registry_data_row,
 )
 from photo_naming import make_photo_path_for_slot
+from version import app_window_title
 from ui import layout_constants as lc
 from ui.config_editor import ConfigEditorWidget
 from ui.photo_capture_dialog import run_photo_capture
@@ -115,7 +116,7 @@ def _app_dir() -> Path:
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SaleMaker")
+        self.setWindowTitle(app_window_title())
         self.setMinimumSize(lc.MIN_WINDOW_W, lc.MIN_WINDOW_H)
 
         self._cfg: AppConfig | None = None
@@ -2274,6 +2275,8 @@ class MainWindow(QMainWindow):
         eq_col = cfg.equipment_type_column
         if eq_col in df.columns:
             self._set_equipment_text(cell_to_str(row[eq_col]))
+        self._photo_paths.clear()
+        self._photo_filenames.clear()
         self._rebuild_checklist()
         self._rebuild_photo_slots()
 
@@ -2285,7 +2288,6 @@ class MainWindow(QMainWindow):
         self._set_checklist_values(vals, fields)
 
         photos_dir = Path(self._photos_dir_edit.text().strip() if self._photos_dir_edit else ".")
-        self._photo_paths.clear()
         for ps in (spec.photo_slots if spec else []):
             cell_name = ""
             if getattr(ps, "excel_column", None):
@@ -2927,6 +2929,8 @@ class MainWindow(QMainWindow):
             self._device_pp_edit.setText("")
         self._matched = None
         cfg = self._cfg
+        self._photo_paths.clear()
+        self._photo_filenames.clear()
         if cfg:
             for edit in self.template_field_edits.values():
                 edit.setText("")
@@ -2934,7 +2938,6 @@ class MainWindow(QMainWindow):
                 self._equipment_cb.setCurrentIndex(0)
             self._rebuild_checklist()
             self._rebuild_photo_slots()
-        self._photo_paths.clear()
         self._refresh_all_thumbs()
         self._update_record_indicator()
         self._set_status("Новая запись. Заполните данные на вкладках и сохраните в реестр.")
